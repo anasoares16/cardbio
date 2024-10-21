@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo de Correspondência - DSTs</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      width: 80%;
+      justify-content: space-between;
+    }
+    .column {
+      width: 45%;
+    }
+    .item {
+      margin: 10px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      transition: border 0.3s, background-color 0.3s;
+    }
+    .matched {
+      background-color: #90ee90;
+      cursor: default;
+      border: 1px solid transparent;
+    }
+    .selected {
+      border: 3px solid #007bff;
+      background-color: #f0f8ff;
+    }
+    .error {
+      background-color: #ffcccc;
+    }
+    .game-over, .congratulations, .info {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      text-align: center;
+      display: none;
+    }
+    .retry-button, .info-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="column" id="lives-column">
+      <h3>Vidas: <span id="lives-count">4</span></h3>
+    </div>
+    <div class="column" id="diseases-column">
+      <div class="item" data-match="1">Gonorreia</div>
+      <div class="item" data-match="2">Sífilis</div>
+      <div class="item" data-match="3">Herpes genital</div>
+      <div class="item" data-match="4">HIV/AIDS</div>
+      <div class="item" data-match="5">HPV</div>
+    </div>
+    <div class="column" id="definitions-column">
+      <div class="item" data-match="5">Infecção viral que causa verrugas genitais e pode levar ao câncer cervical.</div>
+      <div class="item" data-match="2">Infecção bacteriana que pode causar feridas indolores nos genitais e, se não tratada, levar a sérios problemas de saúde.</div>
+      <div class="item" data-match="4">Infecção viral que afeta o sistema imunológico, podendo levar à AIDS se não for controlada.</div>
+      <div class="item" data-match="1">Infecção bacteriana que pode causar corrimento purulento e dor ao urinar.</div>
+      <div class="item" data-match="3">Infecção viral que causa bolhas dolorosas nos genitais e é transmitida através do contato pele a pele.</div>
+    </div>
+  </div>
+
+  <div class="game-over" id="game-over-screen">
+    <p>Game Over!</p>
+    <button class="retry-button" id="retry-button">Tente de Novo</button>
+  </div>
+
+  <div class="congratulations" id="congratulations-screen">
+    <p>Parabéns! Você acertou todas as combinações!</p>
+    <button class="retry-button" id="retry-button-congratulations">Tente de Novo</button>
+    <button class="info-button" id="info-button">Saber Mais</button>
+  </div>
+
+  <div class="info" id="info-screen">
+    <p>Aqui estão as informações sobre métodos contraceptivos:</p>
+    <ul>
+      <li>Preservativo: previne DSTs e gravidez indesejada.</li>
+      <li>Anticoncepcional: hormonal, regula o ciclo menstrual e previne gravidez.</li>
+      <li>Diu: dispositivo intrauterino que evita a fertilização.</li>
+      <li>Implante: libera hormônios para prevenir a gravidez por um longo período.</li>
+      <li>Injeção: fornece hormônios que impedem a ovulação.</li>
+    </ul>
+    <button class="retry-button" id="close-info-button">Fechar</button>
+  </div>
+
+  <script>
+    let selectedDisease = null;
+    let selectedDefinition = null;
+    let lives = 4;
+    let matchedCount = 0;
+
+    function updateLivesDisplay() {
+      document.getElementById('lives-count').innerText = lives;
+    }
+
+    function showErrorEffect(diseaseItem, definitionItem) {
+      diseaseItem.classList.add('error');
+      definitionItem.classList.add('error');
+      setTimeout(() => {
+        diseaseItem.classList.remove('error');
+        definitionItem.classList.remove('error');
+      }, 3000);
+    }
+
+    function restartGame() {
+      lives = 4;
+      matchedCount = 0;
+      updateLivesDisplay();
+      document.querySelectorAll('.matched').forEach(item => {
+        item.classList.remove('matched');
+      });
+      document.querySelectorAll('.selected').forEach(item => {
+        item.classList.remove('selected');
+      });
+      document.getElementById('game-over-screen').style.display = 'none';
+      document.getElementById('congratulations-screen').style.display = 'none';
+      document.getElementById('info-screen').style.display = 'none';
+    }
+
+    function checkWinCondition() {
+      if (matchedCount === 5) {
+        document.getElementById('congratulations-screen').style.display = 'flex';
+      }
+    }
+
+    document.querySelectorAll('#diseases-column .item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (selectedDisease) {
+          selectedDisease.classList.remove('selected');
+        }
+        selectedDisease = item;
+        item.classList.add('selected');
+      });
+    });
+
+    document.querySelectorAll('#definitions-column .item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (selectedDisease && !item.classList.contains('matched')) {
+          selectedDefinition = item;
+          if (selectedDisease.getAttribute('data-match') === selectedDefinition.getAttribute('data-match')) {
+            selectedDisease.classList.add('matched');
+            selectedDefinition.classList.add('matched');
+            selectedDisease.classList.remove('selected');
+            selectedDefinition = null;
+            selectedDisease = null;
+            matchedCount++;
+            checkWinCondition();
+          } else {
+            lives--;
+            showErrorEffect(selectedDisease, selectedDefinition);
+            alert('Combinação incorreta! Tente novamente.');
+            updateLivesDisplay();
+            if (lives <= 0) {
+              document.getElementById('game-over-screen').style.display = 'flex';
+            }
+          }
+        }
+      });
+    });
+
+    document.getElementById('retry-button').addEventListener('click', restartGame);
+    document.getElementById('retry-button-congratulations').addEventListener('click', restartGame);
+    
+    document.getElementById('info-button').addEventListener('click', () => {
+      document.getElementById('info-screen').style.display = 'flex';
+      document.getElementById('congratulations-screen').style.display = 'none'; // Esconde a tela de Parabéns
+    });
+
+    document.getElementById('close-info-button').addEventListener('click', () => {
+      document.getElementById('info-screen').style.display = 'none';
+    });
+
+    updateLivesDisplay();
+  </script>
+</body>
+</html>
